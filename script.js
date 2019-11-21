@@ -4,15 +4,15 @@ var config = {
     databaseURL: "https://rps-game-b4e41.firebaseio.com",
     storageBucket: "rps-game-b4e41.appspot.com",
     };
+    
 firebase.initializeApp(config);
 
-var ref = firebase.database().ref();
+var database = firebase.database();
 var chatData= database.ref("/chat")
-var playersRef = firebase.database().ref("players");
-var p1Ref = firebase.database().ref("players/1");
-var p2Ref = firebase.database().ref("players/2");
-var chat = firebase.database().ref("chat");
-var connectionsRef = firebase.database().ref("connections");
+var playersRef = database.ref("players");
+var p1Ref = database.ref("players/1");
+var p2Ref = database.ref("players/2");
+var connectionsRef = database.ref("connections");
 
 var playerName ="#player-name";
 var playerKey; // unique to session client
