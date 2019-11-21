@@ -1,72 +1,32 @@
-var firebaseConfig = {
+var config = {
     apiKey: "AIzaSyAWLOv-05_6yiAnvIn0HSKTkdOOv_FsKGY",
     authDomain: "rps-game-b4e41.firebaseapp.com",
     databaseURL: "https://rps-game-b4e41.firebaseio.com",
-    projectId: "rps-game-b4e41",
     storageBucket: "rps-game-b4e41.appspot.com",
-    messagingSenderId: "761190332071",
-    appId: "1:761190332071:web:6c107a716643e45bbf8d82",
-  };
-firebase.initializeApp(firebaseConfig);
+    };
+firebase.initializeApp(config);
 
-
-var admin = require('firebase-admin');
 var ref = firebase.database().ref();
+var chatData= database.ref("/chat")
 var playersRef = firebase.database().ref("players");
 var p1Ref = firebase.database().ref("players/1");
 var p2Ref = firebase.database().ref("players/2");
 var chat = firebase.database().ref("chat");
-var connectedRef = firebase.database().ref(".info/connected");
 var connectionsRef = firebase.database().ref("connections");
 
-//Local vars
-var playerName;
-var playerNum;
+var playerName ="#player-name";
 var playerKey; // unique to session client
 var turn = 1;
 var timeDelay = 4000;
+var currentPlayers = null;
+var currentTurn = null;
+var playerNum = false;
+var playerOneExists = false;
+var playerTwoExists = false;
+var playerOneData = null;
+var playerTwoData = null;
 
-//Functions
-var displayChoices = function(pNum) {
-    if (playerNum === pNum) {
-        // console.log("display " + pNum);
-        var r = $("<div>").text("Rock").attr("data-choice", "Rock").addClass("p" + pNum + "-choice");
-        var p = $("<div>").text("Paper").attr("data-choice", "Paper").addClass("p" + pNum + "-choice");
-        var s = $("<div>").text("Scissors").attr("data-choice", "Scissors").addClass("p" + pNum + "-choice");
-        var rps = $("<div>").append(r, p, s);
-        $("#p" + pNum + "-choices").append(rps);
-    }
-}
 
-var displayGameMessage = function(type) {
-    if (playerNum === 1) {
-        if (type === "yourTurn") {
-            $("#game-message").text("It's Your Turn!");
-            $("#game-message").show();
-        } else if (type === "waitingFor") {
-            p2Ref.once("value", function(snap) {
-                if (snap.exists() === true) {
-                    $("#game-message").text("Waiting for " + snap.val().name + " to choose...");
-                }
-            });
-            $("#game-message").show();
-        }
-    } else if (playerNum === 2) {
-        if (type === "yourTurn") {
-            $("#game-message").text("It's Your Turn!");
-            $("#game-message").show();
-        } else if (type === "waitingFor") {
-            p1Ref.once("value", function(snap) {
-                if (snap.exists() === true) {
-                    $("#game-message").text("Waiting for " + snap.val().name + " to choose...");
-                }
-            });
-            $("#game-message").show();
-        }
-    }
-}
-
-//Player enter event listener
 $("#name-submit-button").click(function(e) {
     e.preventDefault();
     playerName = $("#player-name").val().trim();
@@ -139,38 +99,45 @@ p2Ref.child("name").on("value", function(snap) {
         $("#p2-name").removeClass("p-not-entered");
     }
 });
-
-// Firebase listener for win/loss values
-p1Ref.child("wins").on("value", function(snap) {
-    if (snap.exists() === true) {
-        $("#p1-wins").text(snap.val());
+var displayChoices = function(pNum) {
+    if (playerNum === pNum) {
+        // console.log("display " + pNum);
+        var r = $("<div>").text("Rock").attr("data-choice", "Rock").addClass("p" + pNum + "-choice");
+        var p = $("<div>").text("Paper").attr("data-choice", "Paper").addClass("p" + pNum + "-choice");
+        var s = $("<div>").text("Scissors").attr("data-choice", "Scissors").addClass("p" + pNum + "-choice");
+        var rps = $("<div>").append(r, p, s);
+        $("#p" + pNum + "-choices").append(rps);
     }
-});
+}
 
-p1Ref.child("losses").on("value", function(snap) {
-    if (snap.exists() === true) {
-        $("#p1-losses").text(snap.val());
+var displayGameMessage = function(type) {
+    if (playerNum === 1) {
+        if (type === "yourTurn") {
+            $("#game-message").text("It's Your Turn!");
+            $("#game-message").show();
+        } else if (type === "waitingFor") {
+            p2Ref.once("value", function(snap) {
+                if (snap.exists() === true) {
+                    $("#game-message").text("Waiting for " + snap.val().name + " to choose...");
+                }
+            });
+            $("#game-message").show();
+        }
+    } else if (playerNum === 2) {
+        if (type === "yourTurn") {
+            $("#game-message").text("It's Your Turn!");
+            $("#game-message").show();
+        } else if (type === "waitingFor") {
+            p1Ref.once("value", function(snap) {
+                if (snap.exists() === true) {
+                    $("#game-message").text("Waiting for " + snap.val().name + " to choose...");
+                }
+            });
+            $("#game-message").show();
+        }
     }
-});
+}
 
-p2Ref.child("wins").on("value", function(snap) {
-    if (snap.exists() === true) {
-        $("#p2-wins").text(snap.val());
-    }
-});
-
-p2Ref.child("losses").on("value", function(snap) {
-    if (snap.exists() === true) {
-        $("#p2-losses").text(snap.val());
-    }
-});
-
-// hide new player input for 3rd parties
-playersRef.on("value", function(snap) {
-    if (snap.child(1).exists() === true && snap.child(2).exists() === true) {
-        $("#enter-game-panel").hide();
-    }
-});
 
 //Firebase listener to render choices for p1 as turn value is created/changed
 ref.child("turn").on("value", function(snap) {
@@ -205,6 +172,36 @@ playersRef.on("value", function(snap) {
         } else {
             displayGameMessage("yourTurn");
         }
+    }
+});
+// Firebase listener for win/loss values
+p1Ref.child("wins").on("value", function(snap) {
+    if (snap.exists() === true) {
+        $("#p1-wins").text(snap.val());
+    }
+});
+
+p1Ref.child("losses").on("value", function(snap) {
+    if (snap.exists() === true) {
+        $("#p1-losses").text(snap.val());
+    }
+});
+
+p2Ref.child("wins").on("value", function(snap) {
+    if (snap.exists() === true) {
+        $("#p2-wins").text(snap.val());
+    }
+});
+
+p2Ref.child("losses").on("value", function(snap) {
+    if (snap.exists() === true) {
+        $("#p2-losses").text(snap.val());
+    }
+});
+
+playersRef.on("value", function(snap) {
+    if (snap.child(1).exists() === true && snap.child(2).exists() === true) {
+        $("#enter-game-panel").hide();
     }
 });
 
